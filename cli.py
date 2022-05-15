@@ -1,6 +1,4 @@
-from datetime import datetime
 from typing import Optional
-
 import fire
 
 from dotnet_provider import DotnetProvider
