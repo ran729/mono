@@ -1,11 +1,13 @@
 import functools
 import os
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Dict, Set, List, Optional
 
 import git_client
 from base_provider import MonoProvider
 from cache_decorator import Cacher, Storage
+from thread2 import ThreadWithReturnValue
 from time_decorator import Timer
 
 
@@ -50,9 +52,9 @@ class Mono:
     def build_projects_to_apps_mapping(self) -> Dict[str, List]:
         project_paths: List[str] = self.provider.find_projects(recursive=True)
         project_mappings = self._get_project_path_mappings(project_paths)
-        app_projects = [project for project in project_mappings.keys() if self.provider.project_is_an_app(project_mappings[project])][:1]
-        app_to_dependencies_map = {app_project: self.get_dependencies_of_app(app_project, project_mappings) for app_project in app_projects}
-        print(app_to_dependencies_map)
+        apps = [project for project in project_mappings.keys() if self.provider.project_is_an_app(project_mappings[project])]
+        app_to_threads_map = {app: self.get_dependencies_of_app_thread(app, project_mappings) for app in apps}
+        app_to_dependencies_map = {app: thread.join() for app, thread in app_to_threads_map.items()}
         return self._flip(app_to_dependencies_map)
 
     @staticmethod
@@ -71,10 +73,18 @@ class Mono:
         return projects_to_apps
 
     def get_dependencies_of_app(self, app_project: str, project_mappings: Dict[str, str]) -> Set[str]:
+        start = datetime.now()
+        print('start', app_project)
         first_line_deps = self.provider.get_dependant_projects(project_mappings[app_project], app_project)
         dependencies = self._get_proj_deps_recursive(first_line_deps, project_mappings, app_project).union(first_line_deps)
         dependencies.add(app_project)
+        print('finish', app_project, datetime.now() - start)
         return dependencies
+
+    def get_dependencies_of_app_thread(self, app_project: str, project_mappings: Dict[str, str]) -> ThreadWithReturnValue:
+        thread = ThreadWithReturnValue(target=self.get_dependencies_of_app, args=(app_project, project_mappings))
+        thread.start()
+        return thread
 
     @Cacher()
     def _get_closest_csproj(self, path: str) -> Optional[str]:
