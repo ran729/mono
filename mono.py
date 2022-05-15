@@ -49,23 +49,32 @@ class Mono:
     @Timer()
     def build_projects_to_apps_mapping(self) -> Dict[str, List]:
         project_paths: List[str] = self.provider.find_projects(recursive=True)
-        project_mappings = {os.path.basename(project_path): project_path for project_path in project_paths}
-        projects_to_apps: Dict[str, List] = {}
-        app_projects = [project for project in project_mappings.keys() if self.provider.project_is_an_app(project_mappings[project])]
+        project_mappings = self._get_project_path_mappings(project_paths)
+        app_projects = [project for project in project_mappings.keys() if self.provider.project_is_an_app(project_mappings[project])][:1]
+        app_to_dependencies_map = {app_project: self.get_dependencies_of_app(app_project, project_mappings) for app_project in app_projects}
+        print(app_to_dependencies_map)
+        return self._flip(app_to_dependencies_map)
 
-        for app_project in app_projects:
-            projects_to_apps[app_project] = [app_project]
+    @staticmethod
+    def _get_project_path_mappings(project_paths: List[str]) -> Dict[str, str]:
+        return {os.path.basename(project_path): project_path for project_path in project_paths}
 
-            first_line_deps = self.provider.get_dependant_projects(project_mappings[app_project], app_project)
-            app_dependencies = self._get_proj_deps_recursive(first_line_deps, project_mappings, app_project).union(first_line_deps)
-
+    @staticmethod
+    def _flip(app_to_dependencies_map: Dict[str, List[str]]) -> Dict[str, List[str]]:
+        projects_to_apps: Dict[str, List[str]] = {}
+        for app, app_dependencies in app_to_dependencies_map.items():
             for dep in app_dependencies:
                 if dep not in projects_to_apps:
                     projects_to_apps[dep] = []
 
-                projects_to_apps[dep].append(app_project)
-
+                projects_to_apps[dep].append(app)
         return projects_to_apps
+
+    def get_dependencies_of_app(self, app_project: str, project_mappings: Dict[str, str]) -> Set[str]:
+        first_line_deps = self.provider.get_dependant_projects(project_mappings[app_project], app_project)
+        dependencies = self._get_proj_deps_recursive(first_line_deps, project_mappings, app_project).union(first_line_deps)
+        dependencies.add(app_project)
+        return dependencies
 
     @Cacher()
     def _get_closest_csproj(self, path: str) -> Optional[str]:
