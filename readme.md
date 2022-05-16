@@ -2,7 +2,7 @@
 A mono-repo change detection tool
 
 ## Installation - 
-    alias mono='python ~/mono/cli.py'
+    alias mono='python ~/mono/src/cli.py'
 
 ## Usage -
 Get Affected Changed -  
