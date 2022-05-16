@@ -92,15 +92,15 @@ class Mono:
             return None
 
         dir_path = os.path.dirname(path)
-        projects = self.provider.find_projects(prefix=dir_path, recursive=True)
-        return projects[0] if any(projects) else self._get_closest_csproj(dir_path)
+        projects = self.provider.find_projects(prefix=dir_path + '/', recursive=True)
+        return os.path.basename(projects[0]) if any(projects) else self._get_closest_csproj(dir_path)
 
     def _get_changed_projects(self, changed: List[str]) -> Set[str]:
         return set(map(self._get_closest_csproj, changed))
 
     @staticmethod
     def _get_dependant_apps(projects_changed: Set[str], projects_to_apps: Dict[str, List[str]]) -> Set[str]:
-        apps_changed_map = list(map(lambda project: set(projects_to_apps[project]), projects_changed))
+        apps_changed_map = list(map(lambda project: set(projects_to_apps.get(project, [])), projects_changed))
 
         if not any(apps_changed_map):
             return set()
