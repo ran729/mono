@@ -1,5 +1,5 @@
-# mono
-A mono-repo change detection tool
+# mono-diff
+A mono-repo apps changed detection tool
 
 ## Installation - 
     pip install mono-diff
