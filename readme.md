@@ -2,7 +2,7 @@
 A mono-repo change detection tool
 
 ## Installation - 
-    alias mono='python ~/mono/src/cli.py'
+    pip install mono-diff
 
 ## Usage -
 Get Affected Changed -  

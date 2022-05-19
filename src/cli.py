@@ -3,10 +3,11 @@ import fire
 
 from dotnet_provider import DotnetProvider
 from mono import Mono
-
+import logging
 
 class MonoCli:
     def __init__(self):
+        self.logger = logging.getLogger("mono")
         self.mono = Mono(DotnetProvider())
 
     def affected(self, branch: Optional[str] = None):

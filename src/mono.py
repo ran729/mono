@@ -53,7 +53,7 @@ class Mono:
         project_paths: List[str] = self.provider.find_projects(recursive=True)
         project_mappings = self._get_project_path_mappings(project_paths)
         apps = [project for project in project_mappings.keys() if self.provider.project_is_an_app(project_mappings[project])]
-        app_to_threads_map = {app: self.get_dependencies_of_app_thread(app, project_mappings) for app in apps}
+        app_to_threads_map = {app: self._get_dependencies_of_app_thread(app, project_mappings) for app in apps}
         app_to_dependencies_map = {app: thread.join() for app, thread in app_to_threads_map.items()}
         return self._flip(app_to_dependencies_map)
 
@@ -72,7 +72,7 @@ class Mono:
                 projects_to_apps[dep].append(app)
         return projects_to_apps
 
-    def get_dependencies_of_app(self, app_project: str, project_mappings: Dict[str, str]) -> Set[str]:
+    def _get_dependencies_of_app(self, app_project: str, project_mappings: Dict[str, str]) -> Set[str]:
         start = datetime.now()
         print('start', app_project)
         first_line_deps = self.provider.get_dependant_projects(project_mappings[app_project], app_project)
@@ -81,8 +81,8 @@ class Mono:
         print('finish', app_project, datetime.now() - start)
         return dependencies
 
-    def get_dependencies_of_app_thread(self, app_project: str, project_mappings: Dict[str, str]) -> ThreadWithReturnValue:
-        thread = ThreadWithReturnValue(target=self.get_dependencies_of_app, args=(app_project, project_mappings))
+    def _get_dependencies_of_app_thread(self, app_project: str, project_mappings: Dict[str, str]) -> ThreadWithReturnValue:
+        thread = ThreadWithReturnValue(target=self._get_dependencies_of_app, args=(app_project, project_mappings))
         thread.start()
         return thread
 
